@@ -9,7 +9,7 @@ const offenseTypeMap = new Map();
 const timeDivisor = 1000000000000;
 const neighborhoodDivisor = 1000000000;
 const offenseTypeDivisor = 1000000000;
-const datasetReducer =  1;
+const datasetReducer =  2;
 const useMap = true;
 
 let xdate;
@@ -107,7 +107,7 @@ function predict(datetime_ms) {
 			location = "Portland, OR";
 		else 
 			location = neighborhoodMap.get(closestNeighborhood);
-		
+
 		document.getElementById('status').textContent = 
 			"Prediction: " + offenseTypeMap.get(closestOffenseType) + 
 			" in " + location + 
