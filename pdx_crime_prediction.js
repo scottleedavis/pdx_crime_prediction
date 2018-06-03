@@ -10,7 +10,7 @@ const timeDivisor = 1000000000000;
 const neighborhoodDivisor = 1000000000;
 const offenseTypeDivisor = 1000000000;
 const datasetReducer =  1;
-const useMap = false;
+const useMap = true;
 
 let xdate;
 let yneighborhood;
