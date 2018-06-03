@@ -1,0 +1,58 @@
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.11.2"> </script>
+	<style>
+		body {
+			background-color: black;
+		}
+		.title {
+			color: yellow;
+		}
+		.page {
+			display: flex;
+    		flex-direction: column;
+    		align-items: center;
+  			justify-content: center;
+		}
+		#status {
+			color: red;
+    		font-family: monospace;
+    		font-size: 20px;
+    	    margin: 30px;
+
+		}
+		#map {
+        	width: 100%;
+    	}
+    	.disclaimer {
+    		color: white;
+    	}
+    	.references {
+    		color: white;
+    		margin-top: 20px;
+    	}
+    	.references a {
+    		color: yellow;
+    	}
+    </style>
+</head>
+<body>
+	<div class="page">
+		<h2 class="title">PDX Crime Prediction</h2>
+		<span id="status"></span>
+		<iframe id="map" width="600" height="450" frameborder="0" style="border:0" src="" allowfullscreen></iframe>
+		<span class="disclaimer">Disclaimer: This application is for entertainment purposes only and is not to be taken seriously.  Do not use for actual crime prediction.</span>
+		<div class="references">
+			Built with:
+			<ul>
+			<li> <a href="https://js.tensorflow.org/">Tensorflow.js</a>
+			<li><a href="https://www.portlandoregon.gov/police/71978">Portland Police Crime Statistics Open Dataset (January 2018-April 2018)</a>
+			<li><a href="https://developers.google.com/maps/documentation/embed/guide">Google Maps Embed API</a>
+			</ul>
+
+			<span>source code: <a href="https://github.com/scottleedavis/pdx_crime_prediction">https://github.com/scottleedavis/pdx_crime_prediction</a></span>
+		</div>
+	</div>
+    <script src="pdx_crime_prediction.js"></script>
+</body>
+</html>

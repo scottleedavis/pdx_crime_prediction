@@ -1,0 +1,114 @@
+
+const modelNeighborhood = tf.sequential();
+const modelOffenseType = tf.sequential();
+const refresh_period_ms = 10000;
+const neighborhoodMap = new Map();
+const offenseTypeMap = new Map();
+const timeDivisor = 1000000000000;
+const neighborhoodDivisor = 1000000000;
+const offenseTypeDivisor = 1000000000;
+const datasetReducer =  7.2;
+
+let xdate;
+let yneighborhood;
+let yoffensetype;
+
+
+document.getElementById('status').textContent = 'Loading data...';
+fetch("pdx_crime_2018.json").then((response) => {
+    return response.json();
+}).then((dataset) => {
+    document.getElementById('status').textContent = 'Data loaded...';
+    build_model(
+        dataset.map(d => {
+          d["datetime"] = new Date(d["Occur Date"] + " " + d["Occur Time"].toString().replace(/\b(\d{1,2})(\d{2})/g, '$1:$2'));
+          d["datetime_ms"] = d["datetime"].getTime();
+          return d;
+       }).sort( (a,b) => {
+            return a["datetime_ms"] - b["datetime_ms"];
+       })
+    );
+});
+
+
+function build_model(dataset) {
+
+    document.getElementById('status').textContent = 'Building model...';
+
+    modelNeighborhood.add(tf.layers.dense({units: 1, inputShape: [1]}));
+    modelNeighborhood.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+    modelOffenseType.add(tf.layers.dense({units: 1, inputShape: [1]}));
+    modelOffenseType.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+
+    dataset = dataset.slice(0,dataset.length/datasetReducer);
+    dataset.forEach(d => neighborhoodMap.set(d['Neighborhood'].hashCode(), d['Neighborhood']) );
+    dataset.forEach(d => offenseTypeMap.set(d['Offense Type'].hashCode(), d['Offense Type']) );
+
+    const xset = dataset.map( d => d['datetime_ms'] / timeDivisor );
+    const ysetNeighborhood = dataset.map( d => d['Neighborhood'].hashCode() / neighborhoodDivisor );
+    const ysetoffenseType = dataset.map( d => d['Neighborhood'].hashCode() / neighborhoodDivisor );
+
+    xdate = tf.tensor2d(xset, [dataset.length, 1]);
+    yneighborhood = tf.tensor2d(ysetNeighborhood, [dataset.length, 1]);
+    yoffensetype = tf.tensor2d(ysetoffenseType, [dataset.length, 1]);
+  
+    fit();
+
+    setInterval(() => {
+        fit();
+    }, refresh_period_ms);
+}
+
+function fit() {
+    document.getElementById('status').textContent = 'Predicting...';
+
+    const now_ms = new Date().getTime();
+    const future_time_variance = Math.floor(Math.random() * (3600000 - 600000 + 1) ) + 600000;
+    const future_time_ms = new Date(now_ms + future_time_variance).getTime();
+
+    Promise.all([
+        modelNeighborhood.fit(xdate, yneighborhood),
+        modelOffenseType.fit(xdate, yoffensetype),
+        ]).then(() => {
+            predict(future_time_ms/timeDivisor);
+    });
+}
+
+function predict(datetime_ms) {
+
+    const n = modelNeighborhood.predict(tf.tensor2d([datetime_ms], [1, 1])).buffer().values[0]
+    const neighborhoodKeys = [...neighborhoodMap.keys()], neighborGoal = n * neighborhoodDivisor;
+    const closestNeighborhood = neighborhoodKeys.reduce(function(prev, curr) {
+      return (Math.abs(curr - neighborGoal) < Math.abs(prev - neighborGoal) ? curr : prev);
+    });
+
+    const o = modelOffenseType.predict(tf.tensor2d([datetime_ms], [1, 1])).buffer().values[0]
+    const offensetypeKeys = [...offenseTypeMap.keys()], offenseGoal = o * offenseTypeDivisor;
+    const closestOffenseType = offensetypeKeys.reduce(function(prev, curr) {
+      return (Math.abs(curr - offenseGoal) < Math.abs(prev - offenseGoal) ? curr : prev);
+    });
+
+    // console.log(neighborhoodMap.get(closestNeighborhood) + " " + offenseTypeMap.get(closestOffenseType));
+
+    let location = encodeURI(neighborhoodMap.get(closestNeighborhood));
+    const iframeUrl = `https://www.google.com/maps/embed/v1/place?q=${location}%2C%20Portland%2C%20OR&key=AIzaSyCOzLKykk4I2pO1GcNzKw6OaS3M_7wEp5o`
+    document.getElementById('map').src = iframeUrl;
+    if (location === null || location === "" )
+        location = "Portland, OR";
+    document.getElementById('status').textContent = 
+        "Prediction: " + offenseTypeMap.get(closestOffenseType) + 
+        " in " + location + 
+        " at " + new Date(datetime_ms * timeDivisor).toLocaleString();
+
+}
+
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr;
+  if (this.length === 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
