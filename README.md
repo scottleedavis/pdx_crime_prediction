@@ -1,8 +1,10 @@
 # pdx_crime_prediction
 
+http://scottleedavis.com/pdx_crime_prediction/
+
 ML crime prediction using tensorflow.js & open data
 
-## This application is for entertainment purposes only and is not to be taken seriously.  Do not use for actual crime prediction.
+## This application is for entertainment purposes only and is not to be taken seriously.  Do not use for actual crime prediction. 
 
 ### Built with:
 * [Tensorflow.js](https://js.tensorflow.org/)
