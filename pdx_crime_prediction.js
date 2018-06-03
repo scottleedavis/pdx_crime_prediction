@@ -103,8 +103,11 @@ function predict(datetime_ms) {
 		let location = encodeURI(neighborhoodMap.get(closestNeighborhood));
 		const iframeUrl = `https://www.google.com/maps/embed/v1/place?q=${location}%2C%20Portland%2C%20OR&key=AIzaSyCOzLKykk4I2pO1GcNzKw6OaS3M_7wEp5o`
 		document.getElementById('map').src = iframeUrl;
-		if (location === null || location === "" )
+		if (neighborhoodMap.get(closestNeighborhood) === null || neighborhoodMap.get(closestNeighborhood) === "" )
 			location = "Portland, OR";
+		else 
+			location = neighborhoodMap.get(closestNeighborhood);
+		
 		document.getElementById('status').textContent = 
 			"Prediction: " + offenseTypeMap.get(closestOffenseType) + 
 			" in " + location + 
