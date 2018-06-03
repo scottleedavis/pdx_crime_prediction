@@ -9,7 +9,7 @@ const offenseTypeMap = new Map();
 const timeDivisor = 1000000000000;
 const neighborhoodDivisor = 1000000000;
 const offenseTypeDivisor = 1000000000;
-const datasetReducer =  1.5;
+const datasetReducer =  2;
 const useMap = true;
 
 let xdate;
