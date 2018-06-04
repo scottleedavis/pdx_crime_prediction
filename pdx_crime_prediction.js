@@ -121,7 +121,7 @@ function predict(datetime_ms) {
     document.getElementById('status').textContent = 
       "Prediction: " + offenseTypeMap.get(closestOffenseType) + 
       " in " + location + 
-      " at " + new Date(datetime_ms * timeDivisor).toLocaleString();
+      " at " + new Date(datetime_ms).toLocaleString();
   }
 
 }
