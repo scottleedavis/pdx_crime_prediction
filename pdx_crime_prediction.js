@@ -24,12 +24,12 @@ fetch("pdx_crime_2018.json").then((response) => {
 	document.getElementById('status').textContent = 'Data loaded...';
 	build_model(
 		dataset.map(d => {
-		  d["datetime"] = new Date(d["Occur Date"] + " " + pad(d["Occur Time"]).replace(/\b(\d{1,2})(\d{2})/g, '$1:$2'));
-		  d["datetime_ms"] = d["datetime"].getTime();
-		  return d;
-	   }).sort( (a,b) => {
+			d["datetime"] = new Date(d["Occur Date"] + " " + pad(d["Occur Time"]).replace(/\b(\d{1,2})(\d{2})/g, '$1:$2'));
+			d["datetime_ms"] = d["datetime"].getTime();
+			return d;
+		}).sort( (a,b) => {
 			return a["datetime_ms"] - b["datetime_ms"];
-	   })
+		});
 	);
 });
 
@@ -48,7 +48,7 @@ function build_model(dataset) {
 
 	const xset = dataset.map( d => d['datetime_ms'] / timeDivisor );
 	const ysetNeighborhood = dataset.map( d => d['Neighborhood'].hashCode() / neighborhoodDivisor );
-	const ysetoffenseType = dataset.map( d => d['Neighborhood'].hashCode() / offenseTypeDivisor );
+	const ysetOffenseType = dataset.map( d => d['Offense Type'].hashCode() / offenseTypeDivisor );
 
 	// console.log(xset.findIndex(isNaN));
 	// console.log(Math.max(...xset));
@@ -58,7 +58,7 @@ function build_model(dataset) {
 
 	xdate = tf.tensor2d(xset, [dataset.length, 1]);
 	yneighborhood = tf.tensor2d(ysetNeighborhood, [dataset.length, 1]);
-	yoffensetype = tf.tensor2d(ysetoffenseType, [dataset.length, 1]);
+	yoffensetype = tf.tensor2d(ysetOffenseType, [dataset.length, 1]);
   
 	fit();
 
@@ -77,7 +77,7 @@ function fit() {
 	Promise.all([
 		modelNeighborhood.fit(xdate, yneighborhood, { shuffle: true, epochs: 1 }),
 		modelOffenseType.fit(xdate, yoffensetype, { shuffle: true, epochs: 1 }),
-		]).then(() => {
+	]).then(() => {
 			predict(future_time_ms/timeDivisor);
 	});
 }
@@ -86,18 +86,18 @@ function predict(datetime_ms) {
 
 	const n = modelNeighborhood.predict(tf.tensor2d([datetime_ms], [1, 1])).buffer().values[0]
 	const neighborhoodKeys = [...neighborhoodMap.keys()], neighborGoal = n * neighborhoodDivisor;
-	const closestNeighborhood = neighborhoodKeys.reduce(function(prev, curr) {
+	const closestNeighborhood = neighborhoodKeys.reduce( (prev, curr) => {
 	  return (Math.abs(curr - neighborGoal) < Math.abs(prev - neighborGoal) ? curr : prev);
 	});
 
 	const o = modelOffenseType.predict(tf.tensor2d([datetime_ms], [1, 1])).buffer().values[0]
 	const offensetypeKeys = [...offenseTypeMap.keys()], offenseGoal = o * offenseTypeDivisor;
-	const closestOffenseType = offensetypeKeys.reduce(function(prev, curr) {
+	const closestOffenseType = offensetypeKeys.reduce( (prev, curr) => {
 	  return (Math.abs(curr - offenseGoal) < Math.abs(prev - offenseGoal) ? curr : prev);
 	});
 
 	console.log(neighborhoodMap.get(closestNeighborhood) + " " + offenseTypeMap.get(closestOffenseType));
-	console.log(n + " "+o);
+	console.log(n + " " + o);
 
 	if (useMap) {	
 		let location = encodeURI(neighborhoodMap.get(closestNeighborhood));
