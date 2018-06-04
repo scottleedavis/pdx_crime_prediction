@@ -25,7 +25,8 @@ fetch("pdx_crime_2018.json").then((response) => {
   document.getElementById('status').textContent = 'Data loaded...';
   build_model(
     dataset.map(d => {
-      d["datetime_ms"] = new Date(d["Occur Date"] + " " + pad(d["Occur Time"]).replace(/\b(\d{1,2})(\d{2})/g, '$1:$2')).getTime()
+      d["datetime_ms"] = new Date(d["Occur Date"] + " " +
+                              pad(d["Occur Time"]).replace(/\b(\d{1,2})(\d{2})/g, '$1:$2')).getTime()
       return d;
     }).sort( (a,b) => {
       return a["datetime_ms"] - b["datetime_ms"];
@@ -41,7 +42,7 @@ function build_model(dataset) {
     units: 1,
     inputShape: [1],
     kernelInitializer: 'varianceScaling',
-  }));;
+  }));
   modelNeighborhood.compile({
     loss: 'meanSquaredError',
     optimizer: optimizer
@@ -87,19 +88,19 @@ function fit() {
     modelNeighborhood.fit(xdate, yneighborhood, { shuffle: true, epochs: 1 }),
     modelOffenseType.fit(xdate, yoffensetype, { shuffle: true, epochs: 1 }),
   ]).then(() => {
-      predict(future_time_ms/timeDivisor);
+      predict(future_time_ms);
   });
 }
 
 function predict(datetime_ms) {
 
-  const n = modelNeighborhood.predict(tf.tensor2d([datetime_ms], [1, 1])).buffer().values[0]
+  const n = modelNeighborhood.predict(tf.tensor2d([datetime_ms/timeDivisor], [1, 1])).buffer().values[0]
   const neighborhoodKeys = [...neighborhoodMap.keys()], neighborGoal = n * neighborhoodDivisor;
   const closestNeighborhood = neighborhoodKeys.reduce( (prev, curr) => {
     return (Math.abs(curr - neighborGoal) < Math.abs(prev - neighborGoal) ? curr : prev);
   });
 
-  const o = modelOffenseType.predict(tf.tensor2d([datetime_ms], [1, 1])).buffer().values[0]
+  const o = modelOffenseType.predict(tf.tensor2d([datetime_ms/timeDivisor], [1, 1])).buffer().values[0]
   const offensetypeKeys = [...offenseTypeMap.keys()], offenseGoal = o * offenseTypeDivisor;
   const closestOffenseType = offensetypeKeys.reduce( (prev, curr) => {
     return (Math.abs(curr - offenseGoal) < Math.abs(prev - offenseGoal) ? curr : prev);
@@ -129,9 +130,9 @@ String.prototype.hashCode = function() {
   var hash = 0, i, chr;
   if (this.length === 0) return hash;
   for (i = 0; i < this.length; i++) {
-  chr   = this.charCodeAt(i);
-  hash  = ((hash << 5) - hash) + chr;
-  hash |= 0; // Convert to 32bit integer
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
   }
   return hash;
 };
