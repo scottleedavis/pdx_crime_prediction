@@ -1,8 +1,8 @@
 
 const modelNeighborhood = tf.sequential();
 const modelOffenseType = tf.sequential();
-const learningRate = 0.1;
-const optimizer = tf.train.sgd(learningRate);
+const learningRate = 10;
+const optimizer = tf.train.adam(learningRate);
 const refresh_period_ms = 10000;
 const neighborhoodMap = new Map();
 const offenseTypeMap = new Map();
@@ -18,14 +18,14 @@ let yoffensetype;
 
 
 document.getElementById('status').textContent = 'Loading data...';
+
 fetch("pdx_crime_2018.json").then((response) => {
 	return response.json();
 }).then((dataset) => {
 	document.getElementById('status').textContent = 'Data loaded...';
 	build_model(
 		dataset.map(d => {
-			d["datetime"] = new Date(d["Occur Date"] + " " + pad(d["Occur Time"]).replace(/\b(\d{1,2})(\d{2})/g, '$1:$2'));
-			d["datetime_ms"] = d["datetime"].getTime();
+			d["datetime_ms"] = new Date(d["Occur Date"] + " " + pad(d["Occur Time"]).replace(/\b(\d{1,2})(\d{2})/g, '$1:$2')).getTime()
 			return d;
 		}).sort( (a,b) => {
 			return a["datetime_ms"] - b["datetime_ms"];
@@ -37,10 +37,24 @@ function build_model(dataset) {
 
 	document.getElementById('status').textContent = 'Building model...';
 
-	modelNeighborhood.add(tf.layers.dense({units: 1, inputShape: [1]}));;
-	modelNeighborhood.compile({loss: 'meanSquaredError', optimizer: optimizer});
-	modelOffenseType.add(tf.layers.dense({units: 1, inputShape: [1]}));
-	modelOffenseType.compile({loss: 'meanSquaredError', optimizer: optimizer});
+	modelNeighborhood.add(tf.layers.dense({
+		units: 1,
+		inputShape: [1],
+		kernelInitializer: 'varianceScaling',
+	}));;
+	modelNeighborhood.compile({
+		loss: 'meanSquaredError',
+		optimizer: optimizer
+	});
+	modelOffenseType.add(tf.layers.dense({
+		units: 1,
+		inputShape: [1],
+		kernelInitializer: 'varianceScaling',
+	}));
+	modelOffenseType.compile({
+		loss: 'meanSquaredError',
+		optimizer: optimizer
+	});
 
 	dataset = dataset.slice(0,dataset.length/datasetReducer);
 	dataset.forEach(d => neighborhoodMap.set(d['Neighborhood'].hashCode(), d['Neighborhood']) );
@@ -49,12 +63,6 @@ function build_model(dataset) {
 	const xset = dataset.map( d => d['datetime_ms'] / timeDivisor );
 	const ysetNeighborhood = dataset.map( d => d['Neighborhood'].hashCode() / neighborhoodDivisor );
 	const ysetOffenseType = dataset.map( d => d['Offense Type'].hashCode() / offenseTypeDivisor );
-
-	// console.log(xset.findIndex(isNaN));
-	// console.log(Math.max(...xset));
-	// console.log(Math.max(...ysetNeighborhood));
-	// console.log(Math.min(...xset));
-	// console.log(Math.min(...ysetNeighborhood));
 
 	xdate = tf.tensor2d(xset, [dataset.length, 1]);
 	yneighborhood = tf.tensor2d(ysetNeighborhood, [dataset.length, 1]);
@@ -68,6 +76,7 @@ function build_model(dataset) {
 }
 
 function fit() {
+
 	document.getElementById('status').textContent = 'Predicting...';
 
 	const now_ms = new Date().getTime();
@@ -99,7 +108,7 @@ function predict(datetime_ms) {
 	console.log(neighborhoodMap.get(closestNeighborhood) + " " + offenseTypeMap.get(closestOffenseType));
 	console.log(n + " " + o);
 
-	if (useMap) {	
+	if (useMap) {
 		let location = encodeURI(neighborhoodMap.get(closestNeighborhood));
 		const iframeUrl = `https://www.google.com/maps/embed/v1/place?q=${location}%2C%20Portland%2C%20OR&key=AIzaSyCOzLKykk4I2pO1GcNzKw6OaS3M_7wEp5o`
 		document.getElementById('map').src = iframeUrl;
