@@ -29,7 +29,7 @@ fetch("pdx_crime_2018.json").then((response) => {
 			return d;
 		}).sort( (a,b) => {
 			return a["datetime_ms"] - b["datetime_ms"];
-		});
+		})
 	);
 });
 
